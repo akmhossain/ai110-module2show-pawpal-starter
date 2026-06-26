@@ -4,6 +4,8 @@
 
 **a. Initial design**
 
+Three core actions: produce daily plans with actions, add pets and associated tasks, add owner preferences
+
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
