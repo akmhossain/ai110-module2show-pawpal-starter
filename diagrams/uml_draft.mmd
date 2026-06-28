@@ -30,7 +30,7 @@ classDiagram
         +is_high_priority() bool
     }
 
-    class Schedule {
+    class Scheduler {
         +str date
         +Owner owner
         +Pet pet
@@ -47,6 +47,6 @@ classDiagram
     }
 
     Owner "1" --> "many" Pet : owns
-    Owner "1" --> "1" Schedule : uses
-    Schedule "1" o-- "many" Task : contains
+    Owner "1" --> "1" Scheduler : uses
+    Scheduler "1" o-- "many" Task : contains
     Pet "1" --> "many" Task : has
