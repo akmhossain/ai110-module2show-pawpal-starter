@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from datetime import date, timedelta
 from typing import Optional
 import re
 
@@ -13,6 +14,8 @@ class Task:
     pet_name: str = ""  # name of the pet this task belongs to
     is_completed: bool = False
     is_recurring: bool = False
+    recurrence: Optional[str] = None  # "daily" or "weekly"
+    due_date: Optional[date] = None
     preferred_time: Optional[str] = None  # e.g., "morning", "evening"
     notes: str = ""
 
@@ -20,9 +23,35 @@ class Task:
         """Return True if this task's priority is high."""
         return self.priority == "high"
 
-    def mark_complete(self) -> None:
-        """Mark this task as completed."""
+    def mark_complete(self) -> Optional["Task"]:
+        """Mark this task as completed and return the next occurrence for recurring tasks.
+
+        Sets is_completed to True. If recurrence is 'daily' or 'weekly', calculates
+        the next due_date using timedelta (days=1 or weeks=1) relative to the task's
+        existing due_date, falling back to today if none is set. Returns a new Task
+        with the same fields and the updated due_date, or None for non-recurring tasks.
+        """
         self.is_completed = True
+        if self.recurrence == "daily":
+            delta = timedelta(days=1)
+        elif self.recurrence == "weekly":
+            delta = timedelta(weeks=1)
+        else:
+            return None
+        base = self.due_date if self.due_date else date.today()
+        return Task(
+            task_id=f"{self.task_id}_next",
+            name=self.name,
+            category=self.category,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            pet_name=self.pet_name,
+            is_recurring=self.is_recurring,
+            recurrence=self.recurrence,
+            due_date=base + delta,
+            preferred_time=self.preferred_time,
+            notes=self.notes,
+        )
 
     def get_time_minutes(self) -> Optional[int]:
         """Convert preferred_time (named period or clock string) to minutes from midnight."""
@@ -130,6 +159,55 @@ class Scheduler:
             key=lambda t: (priority_order.get(t.priority, 3), t.get_time_minutes() or 0),
         )
 
+    def complete_task(self, task_id: str) -> Optional[Task]:
+        """Mark a task complete by ID and automatically schedule its next occurrence.
+
+        Finds the task with the given task_id, calls mark_complete() on it, and
+        appends the returned next Task to the schedule if one is produced (i.e. the
+        task has a 'daily' or 'weekly' recurrence). Returns the new Task, or None
+        if the task_id was not found or the task is not recurring.
+        """
+        for task in self.tasks:
+            if task.task_id == task_id:
+                next_task = task.mark_complete()
+                if next_task:
+                    self.tasks.append(next_task)
+                return next_task
+        return None
+
+    def detect_conflicts(self) -> list[str]:
+        """Return warning messages for any tasks that share the same scheduled time.
+
+        Compares all tasks that have a preferred_time set using get_time_minutes().
+        For every pair of tasks whose resolved minute values are equal, appends a
+        human-readable warning string naming both tasks and their common time.
+        Tasks without a preferred_time are ignored. Returns an empty list if no
+        conflicts exist. Does not raise exceptions or modify the schedule.
+        """
+        warnings = []
+        timed = [t for t in self.tasks if t.get_time_minutes() is not None]
+        for i, a in enumerate(timed):
+            for b in timed[i + 1:]:
+                if a.get_time_minutes() == b.get_time_minutes():
+                    warnings.append(
+                        f"WARNING: '{a.name}' ({a.pet_name or 'unknown'}) and "
+                        f"'{b.name}' ({b.pet_name or 'unknown'}) are both scheduled at {a.preferred_time}."
+                    )
+        return warnings
+
+    def sort_by_time(self) -> list[Task]:
+        """Return tasks sorted chronologically by preferred_time.
+
+        Uses get_time_minutes() to convert each task's preferred_time to minutes
+        from midnight, enabling consistent comparison across named periods (e.g.
+        'morning') and clock strings (e.g. '8:00am'). Tasks with no preferred_time
+        are sorted to the end. Does not modify self.tasks in place.
+        """
+        return sorted(
+            self.tasks,
+            key=lambda t: (t.get_time_minutes() is None, t.get_time_minutes() or 0),
+        )
+
     def filter_tasks(
         self,
         priority: Optional[str] = None,
@@ -137,9 +215,10 @@ class Scheduler:
         pet_name: Optional[str] = None,
         after: Optional[str] = None,
         before: Optional[str] = None,
+        is_completed: Optional[bool] = None,
     ) -> list[Task]:
-        """Filter tasks by priority, time period/exact time, pet name, or a
-        time window defined by after/before (e.g. after='8:00am', before='12:00pm')."""
+        """Filter tasks by priority, time period/exact time, pet name, completion
+        status, or a time window defined by after/before (e.g. after='8:00am', before='12:00pm')."""
         result = self.tasks
         if priority:
             result = [t for t in result if t.priority == priority]
@@ -147,6 +226,8 @@ class Scheduler:
             result = [t for t in result if t.preferred_time == preferred_time]
         if pet_name:
             result = [t for t in result if t.pet_name == pet_name]
+        if is_completed is not None:
+            result = [t for t in result if t.is_completed == is_completed]
         if after:
             after_min = Task("", "", "", 0, "", preferred_time=after).get_time_minutes()
             if after_min is not None:

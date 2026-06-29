@@ -31,8 +31,9 @@ Three core actions: produce daily plans with actions, add pets and associated ta
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
+  generate_plan doesn't account for overlap, only way to detect overlap is through detect_conflict after a plan is generated. It makes the plan simpler instead of adding multiple tasks.
 - Why is that tradeoff reasonable for this scenario?
-
+  The user can use the sort by task and detect conflict methods to easily see which methods overlap, and pick the one they perfer. This adds user choice and prevents additional complexity in the logic.
 ---
 
 ## 3. AI Collaboration

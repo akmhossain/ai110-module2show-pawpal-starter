@@ -76,14 +76,14 @@ Sample test output:
 
 ## 📐 Smarter Scheduling
 
-> Fill in once you've implemented scheduling logic.
-
 | Feature | Method(s) | Notes |
 |---------|-----------|-------|
-| Task sorting | | e.g., by priority, duration |
-| Filtering | | e.g., skip tasks if time runs out |
-| Conflict handling | | e.g., overlapping time slots |
-| Recurring tasks | | e.g., daily vs. weekly |
+| Sort by priority + time | `Scheduler.sort_tasks()` | Sorts by priority (high → low), then by `preferred_time` as a tiebreaker |
+| Sort by time only | `Scheduler.sort_by_time()` | Chronological order using `get_time_minutes()`; tasks with no time go last |
+| Filtering | `Scheduler.filter_tasks()` | Filter by priority, pet name, preferred time, time window (after/before), or completion status |
+| Conflict detection | `Scheduler.detect_conflicts()` | Pairwise check for tasks sharing the same `preferred_time`; returns warning strings without crashing |
+| Recurring tasks | `Task.mark_complete()` / `Scheduler.complete_task()` | Daily tasks reschedule +1 day; weekly tasks reschedule +7 days using `timedelta` |
+| Budget enforcement | `Scheduler.generate_plan()` / `is_within_budget()` | Tasks are selected in priority order until the owner's `available_minutes` is exhausted |
 
 ## 📸 Demo Walkthrough
 
