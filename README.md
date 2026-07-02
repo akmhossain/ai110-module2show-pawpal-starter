@@ -60,18 +60,25 @@ Total: 75 / 120 min
 
 ## 🧪 Testing PawPal+
 
-```bash
-# Run the full test suite:
-pytest
+### Test Descriptions:
+Tests include checking if a tasks is properly marked true, if a pet's task count increases properly, if a schedule is properly sorted chronlogically (both by time and string), if a recurring task is properly made and added, if a non-recurring task produces no task, and if conflicts are properly detected or no conflict. 
 
-# Run with coverage:
-pytest --cov
+Confidence level: 4/5 stars because tests ensure that functions work properly in multiple scenarios, whether something is added or not. However, without actually using the app we won't truly test to its limits.
+
+How to run:
+
+```bash
+# Mac version:
+python3 -m pytest
 ```
 
 Sample test output:
 
 ```
-# Paste your pytest output here
+tests/test_pawpal.py .............                                       [100%]
+
+============================== 13 passed in 0.02s ==============================
+Finished running tests!
 ```
 
 ## 📐 Smarter Scheduling
