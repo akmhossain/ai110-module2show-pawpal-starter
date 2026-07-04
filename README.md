@@ -11,7 +11,7 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 - Produce a daily plan and explain why it chose that plan
 
 
-## What you will build
+## App Functionalities 
 
 The final app does the following:
 
@@ -43,58 +43,31 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-Paste a sample of your app's CLI or Streamlit output here so a reader can see what a generated plan looks like:
+`main.py` renders task lists as color-coded, emoji-annotated tables instead of plain text. In a color-capable terminal, priority and status cells are ANSI-colored (red/yellow/green for priority, cyan/green for pending/done); the raw text (colors won't show here) looks like:
 
 ```
 ========================================
-TODAY'S SCHEDULE
+🐶🐱 TODAY'S SCHEDULE
 ========================================
-Schedule for 2026-06-29 (Alex):
-  - [HIGH] Morning Walk (30 min) [7:15am] — Buddy
-  - [HIGH] Feed Breakfast (10 min) [8:00am] — Buddy
-  - [HIGH] Feed Dinner (10 min) [5:00pm] — Luna
-  - [MEDIUM] Clean Litter Box (15 min) [9:30am] — Luna
-  - [MEDIUM] Evening Walk (25 min) [6:00pm] — Buddy
-  - [LOW] Evening Playtime (20 min) [6:45pm] — Luna
-Total: 110 / 120 min
+╭────────┬────────────┬────────────────────┬───────┬────────────┬───────────╮
+│ Time   │ Priority   │ Task               │ Pet   │ Duration   │ Status    │
+├────────┼────────────┼────────────────────┼───────┼────────────┼───────────┤
+│ 7:15am │ 🔴 HIGH     │ 🐾 Morning Walk     │ Buddy │ 30 min     │ ⏳ Pending │
+│ 8:00am │ 🔴 HIGH     │ 🍖 Feed Breakfast   │ Buddy │ 10 min     │ ⏳ Pending │
+│ 5:00pm │ 🔴 HIGH     │ 🍖 Feed Dinner      │ Luna  │ 10 min     │ ✅ Done    │
+│ 9:30am │ 🟡 MEDIUM   │ 🧼 Clean Litter Box │ Luna  │ 15 min     │ ⏳ Pending │
+│ 6:00pm │ 🟡 MEDIUM   │ 🐾 Evening Walk     │ Buddy │ 25 min     │ ⏳ Pending │
+│ 6:45pm │ 🟢 LOW      │ 🧸 Evening Playtime │ Luna  │ 20 min     │ ⏳ Pending │
+╰────────┴────────────┴────────────────────┴───────┴────────────┴───────────╯
+
+⏱  Total: 110 / 120 min
 
 ========================================
-SORTED BY TIME
+⚠️  CONFLICT DETECTION TEST
 ========================================
-      7:15am  [ HIGH ]  Morning Walk (Buddy)
-      8:00am  [ HIGH ]  Feed Breakfast (Buddy)
-      9:30am  [MEDIUM]  Clean Litter Box (Luna)
-      5:00pm  [ HIGH ]  Feed Dinner (Luna)
-      6:00pm  [MEDIUM]  Evening Walk (Buddy)
-      6:45pm  [ LOW  ]  Evening Playtime (Luna)
-
-========================================
-FILTER: Buddy's tasks only
-========================================
-  Morning Walk — high
-  Feed Breakfast — high
-  Evening Walk — medium
-
-========================================
-FILTER: Incomplete tasks only
-========================================
-  Morning Walk (Buddy) — done=False
-  Feed Breakfast (Buddy) — done=False
-  Evening Walk (Buddy) — done=False
-  Clean Litter Box (Luna) — done=False
-  Evening Playtime (Luna) — done=False
-
-========================================
-FILTER: Completed tasks only
-========================================
-  Feed Dinner (Luna) — done=True
-
-========================================
-CONFLICT DETECTION TEST
-========================================
-WARNING: 'Feed Breakfast' (Buddy) and 'Brush Teeth' (Buddy) are both scheduled at 8:00am.
-WARNING: 'Feed Breakfast' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
-WARNING: 'Brush Teeth' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
+⚠️  WARNING: 'Feed Breakfast' (Buddy) and 'Brush Teeth' (Buddy) are both scheduled at 8:00am.
+⚠️  WARNING: 'Feed Breakfast' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
+⚠️  WARNING: 'Brush Teeth' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
 ```
 
 ## 🧪 Testing PawPal+
@@ -160,4 +133,19 @@ Finished running tests!
 
 UML diagram that outlines how objects interact with each other
 
-![UML diagram](image.png)
+![UML diagram](diagrams/image.png)
+
+Source: [diagrams/uml_draft.mmd](diagrams/uml_draft.mmd)
+
+
+### 🎨 Formatting features
+
+Both `main.py` (CLI) and `app.py` (Streamlit) use color, emoji, and structured tables to make schedules easier to scan at a glance:
+
+| Feature | Where | Implementation |
+|---------|-------|-----------------|
+| Structured tables | `main.py` | [`tabulate`](https://pypi.org/project/tabulate/) library (`tabulate(rows, headers=..., tablefmt="rounded_outline")`) renders task lists as boxed tables instead of manually padded strings. Added as a dependency in `requirements.txt`. |
+| Color-coded priority/status | `main.py` | Raw ANSI escape codes (`RED`, `YELLOW`, `GREEN`, `CYAN`, `BOLD`, `MAGENTA` constants) wrap priority labels (red=high, yellow=medium, green=low) and status labels (cyan=pending, green=done) via `priority_label()` and `status_label()` helper functions — no extra dependency needed for terminal color. |
+| Emoji task/priority/section indicators | `main.py`, `app.py` | `PRIORITY_ICONS`/`PRIORITY_BADGES` (🔴/🟡/🟢) and `CATEGORY_ICONS` (🐾 exercise, 🍖 feeding, 🧸 enrichment, 🧼 hygiene, 💊 health) dictionaries map task fields to emoji, applied per-row by `priority_label()`/`priority_badge()` and `category_icon()`. Section headers (`section()` helper in `main.py`) also get contextual emoji (e.g. 🕒 for time-sorted view, ⚠️ for conflicts). |
+| Emoji status badges | `app.py` | `status_badge()` returns "✅ Done" / "⏳ Pending" for each task row; `st.success`/`st.warning`/`st.info` calls are prefixed with ✅/⚠️/ℹ️ so state changes are visually distinct in the Streamlit UI. |
+| Reusable row formatting | `app.py` | `task_rows()` centralizes building the emoji/badge-annotated dict rows passed to `st.table()`, replacing the previous plain-text dict list literals used in each section (current tasks, scheduled tasks, skipped tasks, filtered tasks). |

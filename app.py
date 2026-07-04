@@ -4,6 +4,45 @@ from pawpal_system import Task, Pet, Owner, Scheduler
 
 st.set_page_config(page_title="PawPal+", page_icon="🐾", layout="centered")
 
+PRIORITY_BADGES = {"high": "🔴 High", "medium": "🟡 Medium", "low": "🟢 Low"}
+CATEGORY_ICONS = {
+    "exercise": "🐾",
+    "feeding": "🍖",
+    "enrichment": "🧸",
+    "hygiene": "🧼",
+    "health": "💊",
+    "general": "📌",
+}
+
+
+def priority_badge(priority: str) -> str:
+    return PRIORITY_BADGES.get(priority, f"⚪ {priority.title()}")
+
+
+def category_icon(category: str) -> str:
+    return CATEGORY_ICONS.get(category, "📌")
+
+
+def status_badge(is_completed: bool) -> str:
+    return "✅ Done" if is_completed else "⏳ Pending"
+
+
+def task_rows(tasks: list[Task], include_status: bool = True) -> list[dict]:
+    rows = []
+    for t in tasks:
+        row = {
+            "task": f"{category_icon(t.category)} {t.name}",
+            "priority": priority_badge(t.priority),
+            "duration (min)": t.duration_minutes,
+            "preferred time": t.preferred_time or "—",
+            "pet": t.pet_name,
+        }
+        if include_status:
+            row["status"] = status_badge(t.is_completed)
+        rows.append(row)
+    return rows
+
+
 st.title("🐾 PawPal+")
 
 st.divider()
@@ -85,26 +124,15 @@ else:
         new_conflicts = [w for w in conflicts if task.name in w]
         if new_conflicts:
             for warning in new_conflicts:
-                st.warning(warning)
+                st.warning(f"⚠️ {warning}")
         else:
-            st.success(f"Added '{task.name}' with no scheduling conflicts.")
+            st.success(f"✅ Added '{task.name}' with no scheduling conflicts.")
 
 if st.session_state.tasks:
     st.write("Current tasks:")
-    st.table(
-        [
-            {
-                "name": t.name,
-                "duration (min)": t.duration_minutes,
-                "priority": t.priority,
-                "preferred time": t.preferred_time or "—",
-                "pet": t.pet_name,
-            }
-            for t in st.session_state.tasks
-        ]
-    )
+    st.table(task_rows(st.session_state.tasks))
 else:
-    st.info("No tasks yet. Add one above.")
+    st.info("ℹ️ No tasks yet. Add one above.")
 
 st.divider()
 
@@ -132,16 +160,17 @@ if st.session_state.scheduler is not None:
     scheduler = st.session_state.scheduler
     scheduled = st.session_state.scheduled
 
-    st.success(f"Scheduled {len(scheduled)} task(s), using "
+    budget_icon = "✅" if scheduler.is_within_budget() else "⚠️"
+    st.success(f"{budget_icon} Scheduled {len(scheduled)} task(s), using "
                f"{scheduler.get_total_duration()}/{scheduler.owner.available_minutes} min "
                f"({'within' if scheduler.is_within_budget() else 'over'} budget).")
 
     conflicts = scheduler.detect_conflicts()
     if conflicts:
         for warning in conflicts:
-            st.warning(warning)
+            st.warning(f"⚠️ {warning}")
     else:
-        st.success("No scheduling conflicts detected.")
+        st.success("✅ No scheduling conflicts detected.")
 
     st.text(scheduler.explain_plan())
 
@@ -149,34 +178,14 @@ if st.session_state.scheduler is not None:
         sort_choice = st.radio(
             "Sort scheduled tasks by", ["Priority & time", "Time of day"], horizontal=True
         )
-        st.markdown("#### Scheduled tasks")
+        st.markdown("#### 📋 Scheduled tasks")
         ordered = scheduler.sort_tasks() if sort_choice == "Priority & time" else scheduler.sort_by_time()
-        st.table(
-            [
-                {
-                    "name": t.name,
-                    "priority": t.priority,
-                    "duration (min)": t.duration_minutes,
-                    "preferred time": t.preferred_time or "—",
-                    "pet": t.pet_name,
-                }
-                for t in ordered
-            ]
-        )
+        st.table(task_rows(ordered))
 
     skipped = [t for t in st.session_state.tasks if t not in scheduled]
     if skipped:
-        st.markdown("#### Skipped (didn't fit in time budget)")
-        st.table(
-            [
-                {
-                    "name": t.name,
-                    "priority": t.priority,
-                    "duration (min)": t.duration_minutes,
-                }
-                for t in skipped
-            ]
-        )
+        st.markdown("#### 🚫 Skipped (didn't fit in time budget)")
+        st.table(task_rows(skipped, include_status=False))
 
 if st.session_state.get("scheduler") is not None:
     st.divider()
@@ -199,17 +208,6 @@ if st.session_state.get("scheduler") is not None:
     )
 
     if filtered:
-        st.table(
-            [
-                {
-                    "name": t.name,
-                    "priority": t.priority,
-                    "duration (min)": t.duration_minutes,
-                    "preferred time": t.preferred_time or "—",
-                    "pet": t.pet_name,
-                }
-                for t in filtered
-            ]
-        )
+        st.table(task_rows(filtered))
     else:
-        st.info("No scheduled tasks match these filters.")
+        st.info("ℹ️ No scheduled tasks match these filters.")

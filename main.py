@@ -1,4 +1,61 @@
+from tabulate import tabulate
+
 from pawpal_system import Task, Pet, Owner, Scheduler
+
+# ANSI color codes
+RESET = "\033[0m"
+BOLD = "\033[1m"
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+CYAN = "\033[36m"
+MAGENTA = "\033[35m"
+
+PRIORITY_COLORS = {"high": RED, "medium": YELLOW, "low": GREEN}
+PRIORITY_ICONS = {"high": "🔴", "medium": "🟡", "low": "🟢"}
+CATEGORY_ICONS = {
+    "exercise": "🐾",
+    "feeding": "🍖",
+    "enrichment": "🧸",
+    "hygiene": "🧼",
+    "health": "💊",
+}
+
+
+def priority_label(priority: str) -> str:
+    icon = PRIORITY_ICONS.get(priority, "⚪")
+    color = PRIORITY_COLORS.get(priority, "")
+    return f"{color}{icon} {priority.upper()}{RESET}"
+
+
+def status_label(is_completed: bool) -> str:
+    return f"{GREEN}✅ Done{RESET}" if is_completed else f"{CYAN}⏳ Pending{RESET}"
+
+
+def section(title: str) -> None:
+    print(f"\n{BOLD}{MAGENTA}{'=' * 40}{RESET}")
+    print(f"{BOLD}{MAGENTA}{title}{RESET}")
+    print(f"{BOLD}{MAGENTA}{'=' * 40}{RESET}")
+
+
+def print_task_table(tasks: list[Task]) -> None:
+    rows = []
+    for t in tasks:
+        icon = CATEGORY_ICONS.get(t.category, "📌")
+        rows.append([
+            t.preferred_time or "—",
+            priority_label(t.priority),
+            f"{icon} {t.name}",
+            t.pet_name,
+            f"{t.duration_minutes} min",
+            status_label(t.is_completed),
+        ])
+    print(tabulate(
+        rows,
+        headers=["Time", "Priority", "Task", "Pet", "Duration", "Status"],
+        tablefmt="rounded_outline",
+    ))
+
 
 # Owner
 owner = Owner(name="Alex", available_minutes=120)
@@ -24,38 +81,23 @@ owner.add_pet(cat)
 schedule = Scheduler(date="2026-06-29", owner=owner)
 schedule.generate_plan()
 
-print("=" * 40)
-print("TODAY'S SCHEDULE")
-print("=" * 40)
-print(schedule.explain_plan())
+section("🐶🐱 TODAY'S SCHEDULE")
+print_task_table(schedule.sort_tasks())
+print(f"\n{BOLD}⏱  Total: {schedule.get_total_duration()} / {schedule.owner.available_minutes} min{RESET}")
 
-print("\n" + "=" * 40)
-print("SORTED BY TIME")
-print("=" * 40)
-for t in schedule.sort_by_time():
-    print(f"  {t.preferred_time or 'no time':>10}  [{t.priority.upper():^6}]  {t.name} ({t.pet_name})")
+section("🕒 SORTED BY TIME")
+print_task_table(schedule.sort_by_time())
 
-print("\n" + "=" * 40)
-print("FILTER: Buddy's tasks only")
-print("=" * 40)
-for t in schedule.filter_tasks(pet_name="Buddy"):
-    print(f"  {t.name} — {t.priority}")
+section("🐕 FILTER: Buddy's tasks only")
+print_task_table(schedule.filter_tasks(pet_name="Buddy"))
 
-print("\n" + "=" * 40)
-print("FILTER: Incomplete tasks only")
-print("=" * 40)
-for t in schedule.filter_tasks(is_completed=False):
-    print(f"  {t.name} ({t.pet_name}) — done={t.is_completed}")
+section("⏳ FILTER: Incomplete tasks only")
+print_task_table(schedule.filter_tasks(is_completed=False))
 
-print("\n" + "=" * 40)
-print("FILTER: Completed tasks only")
-print("=" * 40)
-for t in schedule.filter_tasks(is_completed=True):
-    print(f"  {t.name} ({t.pet_name}) — done={t.is_completed}")
+section("✅ FILTER: Completed tasks only")
+print_task_table(schedule.filter_tasks(is_completed=True))
 
-print("\n" + "=" * 40)
-print("CONFLICT DETECTION TEST")
-print("=" * 40)
+section("⚠️  CONFLICT DETECTION TEST")
 # Add two tasks for different pets at the exact same time
 schedule.add_task(Task(task_id="c1", name="Brush Teeth",  category="hygiene",  duration_minutes=5, priority="low",    pet_name="Buddy", preferred_time="8:00am"))
 schedule.add_task(Task(task_id="c2", name="Morning Meds", category="health",   duration_minutes=5, priority="high",   pet_name="Luna",  preferred_time="8:00am"))
@@ -63,6 +105,6 @@ schedule.add_task(Task(task_id="c2", name="Morning Meds", category="health",   d
 conflicts = schedule.detect_conflicts()
 if conflicts:
     for msg in conflicts:
-        print(msg)
+        print(f"{RED}⚠️  {msg}{RESET}")
 else:
-    print("No conflicts detected.")
+    print(f"{GREEN}✅ No conflicts detected.{RESET}")
