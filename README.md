@@ -10,11 +10,10 @@ A busy pet owner needs help staying consistent with pet care. They want an assis
 - Consider constraints (time available, priority, owner preferences)
 - Produce a daily plan and explain why it chose that plan
 
-Your job is to design the system first (UML), then implement the logic in Python, then connect it to the Streamlit UI.
 
 ## What you will build
 
-Your final app should:
+The final app does the following:
 
 - Let a user enter basic owner + pet info
 - Let a user add/edit tasks (duration + priority at minimum)
@@ -50,12 +49,52 @@ Paste a sample of your app's CLI or Streamlit output here so a reader can see wh
 ========================================
 TODAY'S SCHEDULE
 ========================================
-Schedule for 2026-06-28 (Alex):
+Schedule for 2026-06-29 (Alex):
   - [HIGH] Morning Walk (30 min) [7:15am] — Buddy
   - [HIGH] Feed Breakfast (10 min) [8:00am] — Buddy
+  - [HIGH] Feed Dinner (10 min) [5:00pm] — Luna
   - [MEDIUM] Clean Litter Box (15 min) [9:30am] — Luna
+  - [MEDIUM] Evening Walk (25 min) [6:00pm] — Buddy
   - [LOW] Evening Playtime (20 min) [6:45pm] — Luna
-Total: 75 / 120 min
+Total: 110 / 120 min
+
+========================================
+SORTED BY TIME
+========================================
+      7:15am  [ HIGH ]  Morning Walk (Buddy)
+      8:00am  [ HIGH ]  Feed Breakfast (Buddy)
+      9:30am  [MEDIUM]  Clean Litter Box (Luna)
+      5:00pm  [ HIGH ]  Feed Dinner (Luna)
+      6:00pm  [MEDIUM]  Evening Walk (Buddy)
+      6:45pm  [ LOW  ]  Evening Playtime (Luna)
+
+========================================
+FILTER: Buddy's tasks only
+========================================
+  Morning Walk — high
+  Feed Breakfast — high
+  Evening Walk — medium
+
+========================================
+FILTER: Incomplete tasks only
+========================================
+  Morning Walk (Buddy) — done=False
+  Feed Breakfast (Buddy) — done=False
+  Evening Walk (Buddy) — done=False
+  Clean Litter Box (Luna) — done=False
+  Evening Playtime (Luna) — done=False
+
+========================================
+FILTER: Completed tasks only
+========================================
+  Feed Dinner (Luna) — done=True
+
+========================================
+CONFLICT DETECTION TEST
+========================================
+WARNING: 'Feed Breakfast' (Buddy) and 'Brush Teeth' (Buddy) are both scheduled at 8:00am.
+WARNING: 'Feed Breakfast' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
+WARNING: 'Brush Teeth' (Buddy) and 'Morning Meds' (Luna) are both scheduled at 8:00am.
 ```
 
 ## 🧪 Testing PawPal+
@@ -94,12 +133,31 @@ Finished running tests!
 
 ## 📸 Demo Walkthrough
 
-Describe your app in numbered steps so a reader can follow along without watching a video:
+### Main UI features
 
-1. <!-- Describe this step -->
-2. <!-- Describe this step -->
-3. <!-- Describe this step -->
-4. <!-- Describe this step -->
-5. <!-- Add more steps as needed -->
+- **Owner & Pet Setup** — Enter the owner's name and daily available minutes, then add one or more pets (name, species, breed, age). Each new pet is attached to the current owner.
+- **Tasks** — Once at least one pet exists, add care tasks by choosing the pet, a task title, duration, priority (low/medium/high), and a preferred time slot. Added tasks are checked against existing tasks for scheduling conflicts and shown in a running table.
+- **Build Schedule** — Generates a daily plan by calling `Scheduler.generate_plan()`, which selects tasks in priority order until the owner's available time budget is used up. Shows the resulting schedule, any conflict warnings, a text explanation of the plan (`explain_plan()`), and a toggle to view the schedule sorted by priority or by time. Tasks that didn't fit in the time budget are listed separately as "Skipped."
+- **Filter Scheduled Tasks** — After a schedule is generated, filter the scheduled tasks by priority, time window (morning/afternoon/evening), and/or pet name to quickly find specific tasks.
 
-**Screenshot or video** *(optional)*: <!-- Insert a screenshot or link to a demo video here -->
+### Example workflow
+
+1. Enter owner info ("Jordan", 120 available minutes) and add a pet ("Mochi", a dog) — click **Add pet**.
+2. Add a task for Mochi, e.g. "Morning walk," 30 minutes, high priority, 7:00am — click **Add task**. Repeat for a few more tasks across priorities and times.
+3. Click **Generate schedule** to build today's plan. The app fills the schedule in priority order until the time budget runs out, showing which tasks made it in and which were skipped.
+4. Toggle between "sort by priority" and "sort by time" to see the same schedule reorganized.
+5. Use the filter controls to narrow the scheduled tasks down to, say, only "high" priority tasks or only tasks for one pet.
+
+### Key Scheduler behaviors shown
+
+- **Sorting** — `sort_tasks()` orders tasks by priority (high → low) with preferred time as a tiebreaker; `sort_by_time()` instead orders purely chronologically, pushing tasks with no preferred time to the end.
+- **Conflict warnings** — `detect_conflicts()` flags any tasks sharing the same preferred time slot as warnings (e.g. two tasks both set for 7:00am), without blocking the user from adding them.
+- **Budget enforcement** — `generate_plan()` fills the schedule in priority order and stops once the owner's `available_minutes` is exhausted, moving any leftover tasks to the "Skipped" list.
+- **Recurring tasks** — completing a daily task reschedules it +1 day, and a weekly task reschedules +7 days, via `Task.mark_complete()` / `Scheduler.complete_task()`.
+
+
+## System Architecture
+
+UML diagram that outlines how objects interact with each other
+
+![UML diagram](image.png)
