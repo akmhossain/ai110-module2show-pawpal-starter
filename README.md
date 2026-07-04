@@ -43,8 +43,6 @@ pip install -r requirements.txt
 
 ## 🖥️ Sample Output
 
-`main.py` renders task lists as color-coded, emoji-annotated tables instead of plain text. In a color-capable terminal, priority and status cells are ANSI-colored (red/yellow/green for priority, cyan/green for pending/done); the raw text (colors won't show here) looks like:
-
 ```
 ========================================
 🐶🐱 TODAY'S SCHEDULE
@@ -61,6 +59,53 @@ pip install -r requirements.txt
 ╰────────┴────────────┴────────────────────┴───────┴────────────┴───────────╯
 
 ⏱  Total: 110 / 120 min
+
+========================================
+🕒 SORTED BY TIME
+========================================
+╭────────┬────────────┬────────────────────┬───────┬────────────┬───────────╮
+│ Time   │ Priority   │ Task               │ Pet   │ Duration   │ Status    │
+├────────┼────────────┼────────────────────┼───────┼────────────┼───────────┤
+│ 7:15am │ 🔴 HIGH     │ 🐾 Morning Walk     │ Buddy │ 30 min     │ ⏳ Pending │
+│ 8:00am │ 🔴 HIGH     │ 🍖 Feed Breakfast   │ Buddy │ 10 min     │ ⏳ Pending │
+│ 9:30am │ 🟡 MEDIUM   │ 🧼 Clean Litter Box │ Luna  │ 15 min     │ ⏳ Pending │
+│ 5:00pm │ 🔴 HIGH     │ 🍖 Feed Dinner      │ Luna  │ 10 min     │ ✅ Done    │
+│ 6:00pm │ 🟡 MEDIUM   │ 🐾 Evening Walk     │ Buddy │ 25 min     │ ⏳ Pending │
+│ 6:45pm │ 🟢 LOW      │ 🧸 Evening Playtime │ Luna  │ 20 min     │ ⏳ Pending │
+╰────────┴────────────┴────────────────────┴───────┴────────────┴───────────╯
+
+========================================
+🐕 FILTER: Buddy's tasks only
+========================================
+╭────────┬────────────┬──────────────────┬───────┬────────────┬───────────╮
+│ Time   │ Priority   │ Task             │ Pet   │ Duration   │ Status    │
+├────────┼────────────┼──────────────────┼───────┼────────────┼───────────┤
+│ 7:15am │ 🔴 HIGH     │ 🐾 Morning Walk   │ Buddy │ 30 min     │ ⏳ Pending │
+│ 8:00am │ 🔴 HIGH     │ 🍖 Feed Breakfast │ Buddy │ 10 min     │ ⏳ Pending │
+│ 6:00pm │ 🟡 MEDIUM   │ 🐾 Evening Walk   │ Buddy │ 25 min     │ ⏳ Pending │
+╰────────┴────────────┴──────────────────┴───────┴────────────┴───────────╯
+
+========================================
+⏳ FILTER: Incomplete tasks only
+========================================
+╭────────┬────────────┬────────────────────┬───────┬────────────┬───────────╮
+│ Time   │ Priority   │ Task               │ Pet   │ Duration   │ Status    │
+├────────┼────────────┼────────────────────┼───────┼────────────┼───────────┤
+│ 7:15am │ 🔴 HIGH     │ 🐾 Morning Walk     │ Buddy │ 30 min     │ ⏳ Pending │
+│ 8:00am │ 🔴 HIGH     │ 🍖 Feed Breakfast   │ Buddy │ 10 min     │ ⏳ Pending │
+│ 6:00pm │ 🟡 MEDIUM   │ 🐾 Evening Walk     │ Buddy │ 25 min     │ ⏳ Pending │
+│ 9:30am │ 🟡 MEDIUM   │ 🧼 Clean Litter Box │ Luna  │ 15 min     │ ⏳ Pending │
+│ 6:45pm │ 🟢 LOW      │ 🧸 Evening Playtime │ Luna  │ 20 min     │ ⏳ Pending │
+╰────────┴────────────┴────────────────────┴───────┴────────────┴───────────╯
+
+========================================
+✅ FILTER: Completed tasks only
+========================================
+╭────────┬────────────┬───────────────┬───────┬────────────┬──────────╮
+│ Time   │ Priority   │ Task          │ Pet   │ Duration   │ Status   │
+├────────┼────────────┼───────────────┼───────┼────────────┼──────────┤
+│ 5:00pm │ 🔴 HIGH     │ 🍖 Feed Dinner │ Luna  │ 10 min     │ ✅ Done   │
+╰────────┴────────────┴───────────────┴───────┴────────────┴──────────╯
 
 ========================================
 ⚠️  CONFLICT DETECTION TEST
